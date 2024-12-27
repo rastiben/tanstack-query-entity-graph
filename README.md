@@ -11,8 +11,9 @@ A smart cache invalidation system for TanStack Query that automatically manages 
 - 🔄 Automatic cache invalidation
 - 🧹 Smart cache reset
 - 🎯 Type-safe entity configuration
-- 🔗 Deep dependency resolution
+- 🔗 Direct dependency resolution
 - 🎨 Simple and intuitive API
+- 🔀 Cross-root invalidation support
 
 ## 📦 Installation
 
@@ -30,39 +31,47 @@ pnpm add tanstack-query-entity-graph
 
 ```typescript
 const entityConfig = {
-   collaborator: {
-      name: 'collaborator',
-      invalidate: ['calendar_event'], // These queries will be invalidated
-      reset: ['profile']             // These queries will be reset
-   },
-   calendar_event: {
-      name: 'calendar_event',
-      invalidate: ['collaborator']
-   }
+  user: {
+    name: 'user',
+    invalidate: ['user_post'], // These queries will be invalidated
+    reset: ['profile']         // These queries will be reset
+  },
+  user_post: {
+    name: 'user_post',
+    invalidate: ['user']
+  }
 };
 ```
 
 ⚠️ **Important Note**: All entity names in the config must be lowercase and use underscores for multiple words!
 
-### 2. Set up the middleware
+### 2. Set up the provider
 
 ```typescript
 import { QueryClient } from '@tanstack/react-query';
-import { createMutationMiddleware } from 'tanstack-query-entity-graph';
+import { EntityQueryClientProvider } from 'tanstack-query-entity-graph';
 
 const queryClient = new QueryClient();
 
-// Initialize the middleware with your entity config
-createMutationMiddleware(queryClient, entityConfig);
+function App() {
+  return (
+    <EntityQueryClientProvider
+      client={queryClient}
+      entityConfig={entityConfig}
+    >
+      <YourApp />
+    </EntityQueryClientProvider>
+  );
+}
 ```
 
 ### 3. Use in your mutations
 
 ```typescript
-function useUpdateCollaborator() {
+function useUpdateUser() {
   return useMutation({
-    mutationFn: updateCollaborator,
-    entities: ['collaborator'] // That's it! All related queries will be handled automatically
+    mutationFn: updateUser,
+    entities: ['user'] // That's it! All related queries will be handled automatically
   });
 }
 ```
@@ -104,61 +113,48 @@ When you trigger a mutation with `entities: ['user']`, it will:
 
 ```typescript
 // ✅ Correct query key format
-useQuery(['collaborator', id], fetchCollaborator);
-useQuery(['calendar_event', 'list'], fetchCalendarEvents);
+useQuery(['user', id], fetchUser);
+useQuery(['user_post', 'list'], fetchUserPosts);
 
 // ❌ Won't be invalidated
-useQuery(['calendarEvent', id], fetchCalendarEvent);
-useQuery(['calendar-event', id], fetchCalendarEvent);
+useQuery(['userPost', id], fetchUserPost);
+useQuery(['user-post', id], fetchUserPost);
 ```
 
-## 🎯 Examples
+## 🔀 Cross-Root Support
 
-### Basic Usage
+When using multiple React roots (e.g., with React on Rails), query invalidation works automatically across different QueryClient instances:
 
 ```typescript
-// Entity configuration
-const entityConfig = {
-  user: {
-    name: 'user',
-    invalidate: ['user_post', 'user_comment'],
-    reset: ['user_stats']
-  },
-  user_post: {
-    name: 'user_post',
-    invalidate: ['user_comment']
-  }
-};
-
-// Query keys must match entity names
-const userQuery = useQuery(['user', id], fetchUser);
-const postsQuery = useQuery(['user_post', 'list'], fetchUserPosts);
-
-// In your component
-function UserProfile() {
-  const mutation = useMutation({
-    mutationFn: updateUser,
-    entities: ['user']
-  });
-
+// Root 1
+function ProfileRoot() {
   return (
-    <button onClick={() => mutation.mutate(userData)}>
-      Update Profile
-    </button>
+    <EntityQueryClientProvider
+      client={queryClient1}
+      entityConfig={entityConfig}
+    >
+      <Profile />
+    </EntityQueryClientProvider>
+  );
+}
+
+// Root 2
+function DashboardRoot() {
+  return (
+    <EntityQueryClientProvider
+      client={queryClient2}
+      entityConfig={entityConfig}
+    >
+      <Dashboard />
+    </EntityQueryClientProvider>
   );
 }
 ```
 
-### Multiple Entities
-
-```typescript
-function TeamManager() {
-  const mutation = useMutation({
-    mutationFn: updateTeam,
-    entities: ['team', 'team_member', 'team_project'] // All related queries will be handled
-  });
-}
-```
+The library will automatically:
+1. Invalidate queries in all roots when a mutation occurs
+2. Clean up event listeners when components unmount
+3. Handle cross-root communication seamlessly
 
 ## 🤝 Contributing
 
