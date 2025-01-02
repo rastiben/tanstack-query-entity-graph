@@ -134,24 +134,21 @@ useMutation({
 })
 ```
 
-#### Mixed Simple and Complex Configurations
+#### Complex Configuration Example - User Update Affecting Comments
 ```typescript
 useMutation({
-  mutationFn: complexUpdate,
-  affects: [
-    'comment', // Uses default invalidate action
-    {
-      name: 'post',
+   mutationFn: updateUser,
+   affects: [{
+      name: 'user',
       action: 'invalidate',
-      queryKey: postKeys.detail({ id: 123 }),
+      queryKey: userKeys.detail({ id: 123 }), // Specific user detail
       invalidate: [
-        {
-          entity: 'comment',
-          queryKey: commentKeys.list({ postId: 123 })
-        }
+         {
+            entity: 'comment',
+            queryKey: commentKeys.byUser({ userId: 123 }) // All comments need update because they display user's name
+         }
       ]
-    }
-  ]
+   }]
 })
 ```
 
