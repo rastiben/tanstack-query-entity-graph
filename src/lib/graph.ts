@@ -7,35 +7,13 @@ export const buildGraph = (config: Record<string, EntityConfig>): Graph => {
     }
 
     entity.invalidate?.forEach((related) =>
-      graph.get(entity.name)!.invalidate.add(related)
+        graph.get(entity.name)!.invalidate.add(related)
     );
 
     entity.reset?.forEach((related) =>
-      graph.get(entity.name)!.reset.add(related)
+        graph.get(entity.name)!.reset.add(related)
     );
 
     return graph;
   }, new Map());
-};
-
-export const getDependencies = (
-  graph: Graph,
-  entityName: string,
-  type: 'invalidate' | 'reset',
-  visited = new Set<string>()
-): string[] => {
-  if (visited.has(entityName)) return [];
-
-  visited.add(entityName);
-  const dependencies = Array.from(graph.get(entityName)?.[type] || []);
-
-  dependencies.forEach((dep) => {
-    getDependencies(graph, dep, type, visited).forEach((nestedDep) => {
-      if (!dependencies.includes(nestedDep)) {
-        dependencies.push(nestedDep);
-      }
-    });
-  });
-
-  return dependencies;
 };

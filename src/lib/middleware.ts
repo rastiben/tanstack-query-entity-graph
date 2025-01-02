@@ -1,12 +1,12 @@
 import { QueryClient } from '@tanstack/react-query';
-import { EntityConfig } from './types';
-import { buildGraph } from './graph.ts';
-import { updateQueries } from "./utils.ts";
+import { EntityConfig, EntityMutationConfig } from './types';
+import { updateQueries, processEntityConfig } from './utils';
+import { buildGraph } from "./graph.ts";
 
 const INVALIDATION_EVENT = 'QUERY_INVALIDATION_EVENT';
 
 interface InvalidationEventDetail {
-    entities: string[];
+    entities: EntityMutationConfig[];
 }
 
 export const createMutationMiddleware = (
@@ -18,17 +18,23 @@ export const createMutationMiddleware = (
     const handleInvalidationEvent = (event: CustomEvent<InvalidationEventDetail>) => {
         const { entities } = event.detail;
         if (entities?.length) {
-            updateQueries(graph, queryClient, entities);
+            entities.forEach(entityConfig => {
+                const { name, action } = processEntityConfig(entityConfig);
+                updateQueries(graph, queryClient, name, action);
+            });
         }
     };
 
     window.addEventListener(INVALIDATION_EVENT, handleInvalidationEvent as EventListener);
 
     const unsubscribe = queryClient.getMutationCache().subscribe((event) => {
-        const entities = event.mutation?.options?.entities as string[] | undefined;
+        const entities = event.mutation?.options?.entities as EntityMutationConfig[] | undefined;
 
         if (entities?.length && event.mutation?.state.status === 'success') {
-            updateQueries(graph, queryClient, entities);
+            entities.forEach(entityConfig => {
+                const { name, action } = processEntityConfig(entityConfig);
+                updateQueries(graph, queryClient, name, action);
+            });
 
             const invalidationEvent = new CustomEvent<InvalidationEventDetail>(
                 INVALIDATION_EVENT,
