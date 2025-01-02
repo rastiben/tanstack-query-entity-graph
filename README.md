@@ -19,36 +19,31 @@ A smart cache invalidation system for TanStack Query that automatically manages 
 
 ```bash
 npm install tanstack-query-entity-graph
-# or
-yarn add tanstack-query-entity-graph
-# or
-pnpm add tanstack-query-entity-graph
 ```
 
-## 🚀 Quick Start
+## 🚀 Usage Guide
 
-### 1. Define your entity relationships
+### 1. Setting Up Entity Configuration
+
+Define relationships between your entities:
 
 ```typescript
 const entityConfig = {
-  user: {
-    name: 'user',
-    invalidate: ['user_post'], // These queries will be invalidated
-    reset: ['profile']         // These queries will be reset
-  },
-  user_post: {
-    name: 'user_post',
-    invalidate: ['user']
-  }
+   user: {
+      name: 'user',
+      invalidate: ['post'], // Entities to invalidate when user is invalidated
+      reset: ['stats']      // Entities to reset when user is reset
+   },
+   post: {
+      name: 'post',
+      invalidate: ['comment']
+   }
 };
 ```
 
-⚠️ **Important Note**: All entity names in the config must be lowercase and use underscores for multiple words!
-
-### 2. Set up the provider
+### 2. Setting Up the Provider
 
 ```typescript
-import { QueryClient } from '@tanstack/react-query';
 import { EntityQueryClientProvider } from 'tanstack-query-entity-graph';
 
 const queryClient = new QueryClient();
@@ -65,100 +60,123 @@ function App() {
 }
 ```
 
-### 3. Use in your mutations
+### 3. Use Cases
 
+#### Basic Usage - Simple Entity Invalidation
 ```typescript
-function useUpdateUser() {
-  return useMutation({
-    mutationFn: updateUser,
-    entities: ['user'] // That's it! All related queries will be handled automatically
-  });
-}
+useMutation({
+  mutationFn: updateUser,
+  affects: ['user'] // Will invalidate 'user' and all its related entities
+})
 ```
 
-## 🔍 How It Works
-
-The library creates a dependency graph from your entity configuration and automatically manages cache invalidation when mutations occur:
-
-1. When a mutation succeeds, the middleware checks the `entities` array in the mutation options
-2. For each entity, it:
-   - Invalidates the entity itself
-   - Finds all directly related entities from the dependency graph
-   - Invalidates those related entities according to the `invalidate` configuration
-   - Resets related entities according to the `reset` configuration
-3. TanStack Query then handles the revalidation of all invalidated queries
-
-For example, with this configuration:
+#### Specifying Action Type
 ```typescript
-const entityConfig = {
-  user: {
+useMutation({
+  mutationFn: updateUser,
+  affects: [{
     name: 'user',
-    invalidate: ['user_post', 'comment'] // Must explicitly declare all entities to invalidate
-  },
-  user_post: {
-    name: 'user_post',
-    invalidate: ['comment'] // Will only invalidate when user_post is directly mutated
-  }
-};
+    action: 'reset' // 'invalidate' or 'reset'
+  }]
+})
 ```
 
-When you trigger a mutation with `entities: ['user']`, it will:
-- Invalidate 'user' queries (the entity itself)
-- Invalidate 'user_post' queries (because it's in user's invalidate array)
-- Invalidate 'comment' queries (because it's in user's invalidate array)
+#### Using Specific Query Key for Main Entity
+```typescript
+useMutation({
+  mutationFn: updateUser,
+  affects: [{
+    name: 'user',
+    action: 'invalidate',
+    queryKey: userKeys.detail({ id: 123 }) // Specific query key for the main entity
+  }]
+})
+```
 
-⚠️ **Important Notes**:
-1. Entity names must be lowercase with underscores for multiple words
-2. Your query keys must start with the entity name (matching the exact format)
+#### Granular Control Over Related Entities
+```typescript
+useMutation({
+  mutationFn: updateUser,
+  affects: [{
+    name: 'user',
+    action: 'invalidate',
+    invalidate: [
+      {
+        entity: 'post',
+        queryKey: postKeys.list({ userId: 123 })
+      }
+    ],
+    reset: [
+      {
+        entity: 'stats',
+        queryKey: statsKeys.detail({ userId: 123 })
+      }
+    ]
+  }]
+})
+```
+
+#### Multiple Entities in One Mutation
+```typescript
+useMutation({
+  mutationFn: updateTeam,
+  affects: [
+    { 
+      name: 'team',
+      action: 'invalidate'
+    },
+    {
+      name: 'user',
+      action: 'reset',
+      queryKey: userKeys.list({ teamId: 123 })
+    }
+  ]
+})
+```
+
+#### Mixed Simple and Complex Configurations
+```typescript
+useMutation({
+  mutationFn: complexUpdate,
+  affects: [
+    'comment', // Uses default invalidate action
+    {
+      name: 'post',
+      action: 'invalidate',
+      queryKey: postKeys.detail({ id: 123 }),
+      invalidate: [
+        {
+          entity: 'comment',
+          queryKey: commentKeys.list({ postId: 123 })
+        }
+      ]
+    }
+  ]
+})
+```
+
+## ⚠️ Important Notes
+
+1. Entity names must be lowercase
+2. Query keys must start with the entity name
+3. An entity specified in the main config cannot appear in its own invalidate/reset arrays
+4. Each entity's dependency is processed only one level deep
+
+## 🔍 Query Key Format
 
 ```typescript
 // ✅ Correct query key format
 useQuery(['user', id], fetchUser);
-useQuery(['user_post', 'list'], fetchUserPosts);
+useQuery(['post', 'list'], fetchPosts);
 
 // ❌ Won't be invalidated
-useQuery(['userPost', id], fetchUserPost);
-useQuery(['user-post', id], fetchUserPost);
+useQuery(['userPost', id], fetchPost);
+useQuery(['user-post', id], fetchPost);
 ```
-
-## 🔀 Cross-Root Support
-
-When using multiple React roots (e.g., with React on Rails), query invalidation works automatically across different QueryClient instances:
-
-```typescript
-// Root 1
-function ProfileRoot() {
-  return (
-    <EntityQueryClientProvider
-      client={queryClient1}
-      entityConfig={entityConfig}
-    >
-      <Profile />
-    </EntityQueryClientProvider>
-  );
-}
-
-// Root 2
-function DashboardRoot() {
-  return (
-    <EntityQueryClientProvider
-      client={queryClient2}
-      entityConfig={entityConfig}
-    >
-      <Dashboard />
-    </EntityQueryClientProvider>
-  );
-}
-```
-
-The library will automatically:
-1. Invalidate queries in all roots when a mutation occurs
-2. Clean up event listeners when components unmount
-3. Handle cross-root communication seamlessly
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 

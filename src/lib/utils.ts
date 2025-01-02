@@ -1,30 +1,68 @@
 import { QueryClient } from '@tanstack/react-query';
-import { Graph, EntityMutationConfig } from './types';
+import { Graph, EntityMutationConfig, QueryKeyConfig, EntityAction } from './types';
+
+const applyQueryAction = (
+    queryClient: QueryClient,
+    queryKey: unknown[],
+    action: 'invalidate' | 'reset'
+) => {
+  if (action === 'invalidate') {
+    queryClient.invalidateQueries({ queryKey });
+  } else {
+    queryClient.resetQueries({ queryKey });
+  }
+};
+
+const processSpecificQueries = (
+    queryClient: QueryClient,
+    configs: QueryKeyConfig[] | undefined,
+    action: 'invalidate' | 'reset'
+) => {
+  if (!configs?.length) return new Set<string>();
+
+  const processedEntities = new Set<string>();
+
+  configs.forEach(config => {
+    processedEntities.add(config.entity);
+    applyQueryAction(queryClient, config.queryKey, action);
+  });
+
+  return processedEntities;
+};
 
 export const updateQueries = (
     graph: Graph,
     queryClient: QueryClient,
-    entityName: string,
-    action: 'invalidate' | 'reset'
+    entityConfig: EntityAction
 ) => {
-  // Get related entities for this action type
-  const relatedEntities = graph.get(entityName)?.[action] || new Set();
+  const { name, action, invalidate: specificInvalidates, reset: specificResets } = entityConfig;
 
-  // Apply action to the entity itself and its related entities
-  [entityName, ...Array.from(relatedEntities)].forEach((entity) => {
-    if (action === 'invalidate') {
-      queryClient.invalidateQueries({ queryKey: [entity.toLowerCase()] });
-    } else {
-      queryClient.resetQueries({ queryKey: [entity.toLowerCase()] });
-    }
-  });
+  // Process specific query keys first
+  const processedInvalidates = processSpecificQueries(queryClient, specificInvalidates, 'invalidate');
+  const processedResets = processSpecificQueries(queryClient, specificResets, 'reset');
+
+  // Handle the main entity
+  applyQueryAction(queryClient, [name.toLowerCase()], action);
+
+  // Handle related entities from graph (excluding those already processed specifically)
+  if (action === 'invalidate') {
+    const relatedEntities = Array.from(graph.get(name)?.invalidate || []);
+    relatedEntities
+        .filter(entity => !processedInvalidates.has(entity))
+        .forEach(entity => applyQueryAction(queryClient, [entity.toLowerCase()], 'invalidate'));
+  } else {
+    const relatedEntities = Array.from(graph.get(name)?.reset || []);
+    relatedEntities
+        .filter(entity => !processedResets.has(entity))
+        .forEach(entity => applyQueryAction(queryClient, [entity.toLowerCase()], 'reset'));
+  }
 };
 
 export const processEntityConfig = (
     config: EntityMutationConfig
-): { name: string; action: 'invalidate' | 'reset' } => {
+): EntityAction => {
   if (typeof config === 'string') {
-    return { name: config, action: 'invalidate' }; // Default to invalidate for string configs
+    return { name: config, action: 'invalidate' };
   }
   return config;
 };

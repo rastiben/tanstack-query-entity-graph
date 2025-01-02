@@ -1,8 +1,16 @@
+export type QueryKeyConfig = {
+  entity: string;
+  queryKey: unknown[];
+};
+
 export type EntityActionType = 'invalidate' | 'reset';
 
 export type EntityAction = {
   name: string;
   action: EntityActionType;
+  queryKey?: unknown[];  // Query key for the main entity
+  invalidate?: QueryKeyConfig[];  // Only for related entities
+  reset?: QueryKeyConfig[];      // Only for related entities
 };
 
 export type EntityConfig = {

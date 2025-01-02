@@ -1,12 +1,12 @@
 declare module '@tanstack/react-query' {
   interface UseMutationOptions {
-    entities?: string[];
+    affects?: string[];
   }
 
   interface MutationCacheNotifyEvent {
     mutation: {
       options: {
-        entities?: string[];
+        affects?: string[];
       };
     };
   }
