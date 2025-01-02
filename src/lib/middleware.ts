@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { EntityConfig, EntityMutationConfig } from './types';
-import { buildGraph, updateQueries, processEntityConfig } from './utils';
+import { updateQueries, processEntityConfig } from './utils';
+import { buildGraph } from "./graph.ts";
 
 const INVALIDATION_EVENT = 'QUERY_INVALIDATION_EVENT';
 

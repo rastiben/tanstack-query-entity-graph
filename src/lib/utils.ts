@@ -35,14 +35,14 @@ export const updateQueries = (
     queryClient: QueryClient,
     entityConfig: EntityAction
 ) => {
-  const { name, action, invalidate: specificInvalidates, reset: specificResets } = entityConfig;
+  const { name, action, queryKey, invalidate: specificInvalidates, reset: specificResets } = entityConfig;
 
   // Process specific query keys first
   const processedInvalidates = processSpecificQueries(queryClient, specificInvalidates, 'invalidate');
   const processedResets = processSpecificQueries(queryClient, specificResets, 'reset');
 
-  // Handle the main entity
-  applyQueryAction(queryClient, [name.toLowerCase()], action);
+  // Handle the main entity with optional specific queryKey
+  applyQueryAction(queryClient, queryKey || [name.toLowerCase()], action);
 
   // Handle related entities from graph (excluding those already processed specifically)
   if (action === 'invalidate') {
