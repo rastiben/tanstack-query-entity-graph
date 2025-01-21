@@ -13,6 +13,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Types */
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "outDir": "./dist",
+    "rootDir": "./src/lib",
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -21,5 +27,5 @@
     "noUncheckedSideEffectImports": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src"],
+  "include": ["src/lib"],
 }
