@@ -1,16 +1,19 @@
 {
   "name": "tanstack-query-entity-graph",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/types/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
+  "main": "./dist/tanstack-query-entity-graphb.umd.cjs",
+  "module": "./dist/tanstack-query-entity-graph.js",
+  "exports": {
+    ".": {
+      "import": "./dist/tanstack-query-entity-graph.js",
+      "require": "./dist/tanstack-query-entity-graph.umd.cjs"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-index.mjs",
-    "build": "tsc -b && vite build",
+    "build": "tsc && vite build",
     "type-check": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
