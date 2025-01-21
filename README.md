@@ -66,18 +66,22 @@ function App() {
 ```typescript
 useMutation({
   mutationFn: updateUser,
-  affects: ['user'] // Will invalidate 'user' and all its related entities
+  meta: {
+      affects: ['user']
+  } // Will invalidate 'user' and all its related entities
 })
 ```
 
 #### Specifying Action Type
 ```typescript
 useMutation({
-  mutationFn: updateUser,
-  affects: [{
-    name: 'user',
-    action: 'reset' // 'invalidate' or 'reset'
-  }]
+  mutationFn: updateUser, 
+  meta: {
+    affects: [{
+        name: 'user',
+        action: 'reset' // 'invalidate' or 'reset'
+    }]
+  }
 })
 ```
 
@@ -85,11 +89,13 @@ useMutation({
 ```typescript
 useMutation({
   mutationFn: updateUser,
-  affects: [{
-    name: 'user',
-    action: 'invalidate',
-    queryKey: userKeys.detail({ id: 123 }) // Specific query key for the main entity
-  }]
+  meta: {
+      affects: [{
+          name: 'user',
+          action: 'invalidate',
+          queryKey: userKeys.detail({ id: 123 }) // Specific query key for the main entity
+      }]
+  }
 })
 ```
 
@@ -97,22 +103,24 @@ useMutation({
 ```typescript
 useMutation({
   mutationFn: updateUser,
-  affects: [{
-    name: 'user',
-    action: 'invalidate',
-    invalidate: [
-      {
-        entity: 'post',
-        queryKey: postKeys.list({ userId: 123 })
-      }
-    ],
-    reset: [
-      {
-        entity: 'stats',
-        queryKey: statsKeys.detail({ userId: 123 })
-      }
-    ]
-  }]
+  meta: {
+      affects: [{
+          name: 'user',
+          action: 'invalidate',
+          invalidate: [
+              {
+                  entity: 'post',
+                  queryKey: postKeys.list({ userId: 123 })
+              }
+          ],
+          reset: [
+              {
+                  entity: 'stats',
+                  queryKey: statsKeys.detail({ userId: 123 })
+              }
+          ]
+      }]
+  }
 })
 ```
 
@@ -120,17 +128,19 @@ useMutation({
 ```typescript
 useMutation({
   mutationFn: updateTeam,
-  affects: [
-    { 
-      name: 'team',
-      action: 'invalidate'
-    },
-    {
-      name: 'user',
-      action: 'reset',
-      queryKey: userKeys.list({ teamId: 123 })
-    }
-  ]
+  meta: {
+      affects: [
+          {
+              name: 'team',
+              action: 'invalidate'
+          },
+          {
+              name: 'user',
+              action: 'reset',
+              queryKey: userKeys.list({ teamId: 123 })
+          }
+      ]
+  }
 })
 ```
 
@@ -138,17 +148,19 @@ useMutation({
 ```typescript
 useMutation({
    mutationFn: updateUser,
-   affects: [{
-      name: 'user',
-      action: 'invalidate',
-      queryKey: userKeys.detail({ id: 123 }), // Specific user detail
-      invalidate: [
-         {
-            entity: 'comment',
-            queryKey: commentKeys.byUser({ userId: 123 }) // All comments need update because they display user's name
-         }
-      ]
-   }]
+   meta: {
+       affects: [{
+           name: 'user',
+           action: 'invalidate',
+           queryKey: userKeys.detail({ id: 123 }), // Specific user detail
+           invalidate: [
+               {
+                   entity: 'comment',
+                   queryKey: commentKeys.byUser({ userId: 123 }) // All comments need update because they display user's name
+               }
+           ]
+       }]
+   }
 })
 ```
 

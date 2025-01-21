@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { createMutationMiddleware } from '../lib/middleware';
 import type { EntityConfig } from '../lib/types';
 
@@ -16,12 +16,11 @@ describe('createMutationMiddleware', () => {
     beforeEach(() => {
         vi.resetAllMocks();
         queryClient.getMutationCache.mockReturnValue(mutationCache);
-        // @ts-ignore
-        window.addEventListener = vi.fn();
-        // @ts-ignore
-        window.removeEventListener = vi.fn();
-        // @ts-ignore
-        window.dispatchEvent = vi.fn();
+
+        // Mocks des méthodes de window directement
+        window.addEventListener = vi.fn() as any;
+        window.removeEventListener = vi.fn() as any;
+        window.dispatchEvent = vi.fn() as any;
     });
 
     it('should subscribe to mutation cache', () => {
@@ -64,7 +63,7 @@ describe('createMutationMiddleware', () => {
         subscribeCallback({
             mutation: {
                 options: {
-                    affects: ['user']
+                    meta: { affects: ['user'] }
                 },
                 state: {
                     status: 'success'
@@ -83,7 +82,8 @@ describe('createMutationMiddleware', () => {
         };
 
         let eventListener: any;
-        window.addEventListener.mockImplementation((event, listener) => {
+
+        (window.addEventListener as Mock).mockImplementation((_: any, listener: any) => {
             eventListener = listener;
         });
 

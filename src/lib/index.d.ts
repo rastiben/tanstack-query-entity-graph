@@ -1,13 +1,15 @@
-declare module '@tanstack/react-query' {
-  interface UseMutationOptions {
-    affects?: string[];
-  }
-
-  interface MutationCacheNotifyEvent {
-    mutation: {
-      options: {
-        affects?: string[];
-      };
-    };
-  }
-}
+// import "@tanstack/react-query";
+//
+// declare module '@tanstack/react-query' {
+//   interface UseMutationOptions {
+//     affects?: string[];
+//   }
+//
+//   interface MutationCacheNotifyEvent {
+//     mutation: {
+//       options: {
+//         affects?: string[];
+//       };
+//     };
+//   }
+// }

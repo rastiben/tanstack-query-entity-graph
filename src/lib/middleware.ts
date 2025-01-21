@@ -28,7 +28,7 @@ export const createMutationMiddleware = (
     window.addEventListener(INVALIDATION_EVENT, handleInvalidationEvent as EventListener);
 
     const unsubscribe = queryClient.getMutationCache().subscribe((event) => {
-        const affects = event.mutation?.options?.affects as EntityMutationConfig[] | undefined;
+        const affects = event.mutation?.options?.meta?.affects as EntityMutationConfig[] | undefined;
 
         if (affects?.length && event.mutation?.state.status === 'success') {
             const invalidationEvent = new CustomEvent<InvalidationEventDetail>(

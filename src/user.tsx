@@ -2,10 +2,13 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 const useUpdateName = () => {
     return useMutation({
-        entities: ['name'],
-        mutationFn: () => {
+        meta: {
+            affects: ['name'],
+        },
+        mutationFn: async () => {
             localStorage.setItem('firstname', 'benoit');
             localStorage.setItem('lastname', 'rastier');
+            return;
         },
     });
 };
@@ -31,7 +34,7 @@ const User = () => {
 
     return (
         <>
-            <button onClick={updateName}>Update name</button>
+            <button onClick={() => updateName()}>Update name</button>
             <div>Firstname: {firstname}</div>
             <div>Lastname: {lastname}</div>
         </>
