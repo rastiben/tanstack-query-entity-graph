@@ -14,5 +14,9 @@ export default defineConfig({
             ? 'tanstack-query-entity-graph.umd.cjs'
             : 'tanstack-query-entity-graph.js'
   },
-  plugins: [react(), dts({ include: ["./src/lib"]})],
+  plugins: [react(), dts({
+    include: ["src/lib/**/*"],
+    rollupTypes: true,
+    insertTypesEntry: true
+  })],
 })
